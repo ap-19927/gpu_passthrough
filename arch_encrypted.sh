@@ -2,18 +2,27 @@
 
 #### Configurable variables:
 ####
+
 # find disk you wish to partition from
 # fdisk -l
-disk="vda"
-disk1=$disk"1"
-disk2=$disk"2"
-disk3=$disk"3"
+disk="mmcblk0"
+disk1=$disk"p1"
+disk2=$disk"p2"
+disk3=$disk"p3"
+
+wired="no"
 
 # find from
 # ip a
-wire="enp1s0"
-wireless="wlan0"
-wirelessnetwork="<wireless>"
+networkdevice="wlan0"
+
+# find from
+#https://www.freecodecamp.org/news/how-to-install-arch-linux/#how-to-connect-to-the-internet
+# iwctl
+# station $networkdevice scan
+# station $networkdevice get-networks
+networkwireless="<network>"
+networkpasswd="<password>"
 
 # find from
 # ls /usr/share/zoneinfo
@@ -59,16 +68,18 @@ pb () {
   mount /dev/mapper/root /mnt
   mount --mkdir /dev/$disk1 /mnt/boot
 
-  #https://www.freecodecamp.org/news/how-to-install-arch-linux/#how-to-connect-to-the-internet
-  #iwctl
-  #device list
-  #station $wireless scan
-  #station $wireless get-networks
-  #station $wireless connect $wirelessnetwork
+  if [ "$wired" = "no" ]; then
+    iwctl --passphrase $networkpasswd station $networkdevice connect $networkwireless
+  fi
+
 
   cp /etc/pacman.d/mirrorlist /etc/pacman.d/mirrorlist.bk
   reflector --download-timeout 60 --country $country --age 12 --protocol https --sort rate --save /etc/pacman.d/mirrorlist
-  pacstrap /mnt base base-devel linux linux-firmware sudo $editor intel-ucode grub efibootmgr openssh
+
+  pacstrap /mnt base linux linux-firmware $editor intel-ucode grub efibootmgr openssh
+  if [ "$wired" = "no" ]; then
+    pacstrap /mnt iwd
+  fi
   genfstab -U /mnt >> /mnt/etc/fstab
 
   cp -r . /mnt/root/
@@ -137,13 +148,30 @@ GRUB_DISABLE_RECOVERY=true
 EOF
   grub-mkconfig -o /boot/grub/grub.cfg
 
-  cat > /etc/systemd/network/20-wired.network << EOF
-[Match]
-Name=$wire
+  #https://stackoverflow.com/questions/2237080/how-to-compare-strings-in-bash
+  #https://wiki.archlinux.org/title/Systemd-networkd
+  if [ "$wired" = "no" ]; then
+    iwctl --passphrase $networkpasswd station $networkdevice connect $networkwireless
+    cat > /etc/systemd/network/25-wireless.network << EOF
+  [Match]
+  Name=$networkdevice
 
-[Network]
-DHCP=yes
+  [Network]
+  DHCP=yes
+  IgnoreCarrierLoss=3s
 EOF
+  systemctl enable iwd
+  fi
+  if [ "$wired" != "no" ]; then
+    cat > /etc/systemd/network/20-wired.network << EOF
+  [Match]
+  Name=$networkdevice
+
+  [Network]
+  DHCP=yes
+EOF
+  fi
+
   systemctl enable systemd-networkd
   systemctl enable systemd-resolved
 
@@ -151,6 +179,8 @@ EOF
   iptables -A INPUT -p tcp --dport $sshport -s $LAN -j ACCEPT
   iptables -A INPUT -p tcp --dport $sshport -s 127.0.0.0/8 -j ACCEPT
   iptables -A INPUT -p tcp --dport $sshport -j DROP
+  iptables-save -f /etc/iptables/iptables.rules
+  systemctl enable iptables
   systemctl enable sshd
 
   echo "Password for root: "
@@ -158,10 +188,10 @@ EOF
   useradd -m -G wheel $user
   echo "Password for $user: "
   passwd $user
-  echo "%wheel ALL=(ALL) ALL" >> /etc/sudoers
 
   #pacman -S spice-vdagent xf86-video-qxl
-  pacman -S htop neofetch git
+  pacman -S htop neofetch git rsync
+  pacman -S xorg-server xorg-xinit xorg-xrandr pulseaudio pavucontrol bspwm alacritty sxhkd rofi polybar keepassxc firefox
 
   #exit
   #reboot
