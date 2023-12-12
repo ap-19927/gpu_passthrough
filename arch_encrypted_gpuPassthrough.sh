@@ -164,7 +164,7 @@ EOF
 softdep $gpudriver pre: vfio-pci
 EOF
 
-  cati > /etc/modules-load.d/vfio-pci.conf << EOF
+  cat > /etc/modules-load.d/vfio-pci.conf << EOF
 vfio-pci
 EOF
 

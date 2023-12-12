@@ -185,7 +185,7 @@ EOF
 
   echo "Password for root: "
   passwd
-  useradd -m -G wheel $user
+  useradd -m -G $user
   echo "Password for $user: "
   passwd $user
 
