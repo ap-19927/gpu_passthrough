@@ -177,8 +177,7 @@ EOF
   echo "Password for $user: "
   passwd $user
 
-  pacman -S htop neofetch git rsync
-  pacman -S xorg-server xorg-xinit xorg-xrandr pulseaudio pavucontrol bspwm alacritty sxhkd rofi polybar keepassxc firefox
+  pacman -S xorg-server xorg-xinit xorg-xrandr pulseaudio pavucontrol bspwm alacritty sxhkd rofi polybar keepassxc firefox htop fastfetch git rsync
 
 }
 
