@@ -47,7 +47,6 @@ pb () {
   loadkeys us
   timedatectl set-ntp true
   cfdisk /dev/$disk
-  #or fdisk /dev/$disk
   # $disk1 is boot/ EFI system partition - at least 300 MiB 
   # $disk2 is swap - one quarter of RAM
   # $disk3 is root - remaining space of drive
@@ -59,10 +58,6 @@ pb () {
   cryptsetup open /dev/$disk3 root
   mkfs.ext4 /dev/mapper/root
 
-  #mount /dev/mapper/root /mnt
-  #umount /mnt
-  #cryptsetup close root
-  #cryptsetup open /dev/$disk3 root
   swapon /dev/$disk2
 
   mount /dev/mapper/root /mnt
@@ -145,6 +140,7 @@ GRUB_TERMINAL_INPUT=console
 GRUB_GFXMODE=auto
 GRUB_GFXPAYLOAD_LINUX=keep
 GRUB_DISABLE_RECOVERY=true
+GRUB_DISABLE_OS_PROBER=false
 EOF
   grub-mkconfig -o /boot/grub/grub.cfg
 
@@ -175,26 +171,15 @@ EOF
   systemctl enable systemd-networkd
   systemctl enable systemd-resolved
 
-  #https://serverfault.com/questions/835010/how-to-allow-ssh-only-from-local-network-via-iptables
-  iptables -A INPUT -p tcp --dport $sshport -s $LAN -j ACCEPT
-  iptables -A INPUT -p tcp --dport $sshport -s 127.0.0.0/8 -j ACCEPT
-  iptables -A INPUT -p tcp --dport $sshport -j DROP
-  iptables-save -f /etc/iptables/iptables.rules
-  systemctl enable iptables
-  systemctl enable sshd
-
   echo "Password for root: "
   passwd
-  useradd -m -G $user
+  useradd -m -U $user
   echo "Password for $user: "
   passwd $user
 
-  #pacman -S spice-vdagent xf86-video-qxl
   pacman -S htop neofetch git rsync
   pacman -S xorg-server xorg-xinit xorg-xrandr pulseaudio pavucontrol bspwm alacritty sxhkd rofi polybar keepassxc firefox
 
-  #exit
-  #reboot
 }
 
 "$@"

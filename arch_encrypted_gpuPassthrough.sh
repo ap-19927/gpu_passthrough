@@ -104,10 +104,6 @@ pb () {
   cryptsetup open /dev/$disk3 root
   mkfs.ext4 /dev/mapper/root
 
-  #mount /dev/mapper/root /mnt
-  #umount /mnt
-  #cryptsetup close root
-  #cryptsetup open /dev/$disk"3" root
   swapon /dev/$disk2
 
   mount /dev/mapper/root /mnt
@@ -245,7 +241,7 @@ EOF
 
   echo "Password for root: "
   passwd
-  useradd -m $user
+  useradd -m -U $user
   echo "Password for $user: "
   passwd $user
 
@@ -260,8 +256,6 @@ EOF
 
   pacman -S xorg-server xorg-xinit xorg-xrandr bspwm alacritty sxhkd rofi polybar htop neofetch keepassxc
 
-  #exit
-  #reboot
 }
 
 "$@"
